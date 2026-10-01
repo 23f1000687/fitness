@@ -167,14 +167,29 @@ legs:{
 3:[["warm",""],["skip","5 min non-stop (or 12 × 30s/30s)"],["bsq","4 × 15 · 2s pause at bottom"],["bss","3 × 12 each leg · 3s down"],["rdl","4 × 12"],["thrust","3 × 12 each leg (or 3 × 20 both)"],["slc","3 × 15 each leg"],["core3","Hollow 3 × 25s + Plank 3 × 60s + Side plank 2 × 35s/side"]]}
 };
 
+/* ===== START DATE: Day 1 = Thursday, 1 October 2026 ===== */
+const START=new Date(2026,9,1);
+const WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const WDF=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function dateOf(w,i){const d=new Date(START.getFullYear(),START.getMonth(),START.getDate());d.setDate(d.getDate()+(w-1)*7+i);return d}
+function dayFull(w,i){const d=dateOf(w,i);return `${WDF[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]}`}
+function todayPos(){
+ const n=new Date(),t=new Date(n.getFullYear(),n.getMonth(),n.getDate());
+ const diff=Math.round((t-START)/86400000);
+ if(diff<0)return{w:1,i:0};
+ if(diff>=84)return{w:12,i:6};
+ return{w:Math.floor(diff/7)+1,i:diff%7};
+}
+
 const DAYS=[
-{d:"Mon",f:"Monday",t:"push",l:"Push A",s:"Push"},
-{d:"Tue",f:"Tuesday",t:"pull",l:"Pull A",s:"Pull"},
-{d:"Wed",f:"Wednesday",t:"legs",l:"Legs + Core A",s:"Legs"},
-{d:"Thu",f:"Thursday",t:"push",l:"Push B",s:"Push"},
-{d:"Fri",f:"Friday",t:"pull",l:"Pull B",s:"Pull"},
-{d:"Sat",f:"Saturday",t:"legs",l:"Legs + Core B",s:"Legs"},
-{d:"Sun",f:"Sunday",t:"rest",l:"Rest + Measure",s:"Rest"}];
+{t:"push",l:"Push A",s:"Push"},
+{t:"pull",l:"Pull A",s:"Pull"},
+{t:"legs",l:"Legs + Core A",s:"Legs"},
+{t:"push",l:"Push B",s:"Push"},
+{t:"pull",l:"Pull B",s:"Pull"},
+{t:"legs",l:"Legs + Core B",s:"Legs"},
+{t:"rest",l:"Rest + Measure",s:"Rest"}];
 const FOCUS={push:"Chest · Shoulders · Triceps",pull:"Back · Biceps · Rear delts · Lower abs",legs:"Thighs · Glutes · Hamstrings · Calves · Core · Cardio",rest:"Recover, walk, measure, plan the week"};
 const TIME={push:"~25 min",pull:"~25 min",legs:"~30 min",rest:"~45 min walk"};
 
@@ -221,7 +236,8 @@ function meals(i){
 }
 const HABITS=["3 litres of water","7,000+ steps (walk after lunch or dinner)","7–8 hours of sleep","Zero junk: no namkeen, biscuits, sweets, cold drinks, fried snacks"];
 
-const S={week:1,day:(new Date().getDay()+6)%7,tab:"train",checks:{},logs:{}};
+const TP=todayPos();
+const S={week:TP.w,day:TP.i,tab:"train",checks:{},logs:{}};
 const key=(w,i,t,x)=>`w${w}-d${i}-${t}${x}`;
 const $=id=>document.getElementById(id);
 
@@ -238,7 +254,7 @@ function itemHTML(it,k,extra){
 function trainView(){
  const w=S.week,i=S.day,d=DAYS[i],items=dayItems(w,i);
  const done=items.filter((_,x)=>S.checks[key(w,i,"x",x)]).length;
- return `<div class="dayhead"><div class="lbl">${d.f} · Week ${w}</div><h2>${d.l}</h2><div class="sub">${FOCUS[d.t]}</div><div class="meta"><span>⏱ ${TIME[d.t]}</span><span>${done}/${items.length} done</span></div><div class="bar"><i style="width:${items.length?done/items.length*100:0}%"></i></div></div>
+ return `<div class="dayhead"><div class="lbl">${dayFull(w,i)} · Week ${w}</div><h2>${d.l}</h2><div class="sub">${FOCUS[d.t]}</div><div class="meta"><span>⏱ ${TIME[d.t]}</span><span>${done}/${items.length} done</span></div><div class="bar"><i style="width:${items.length?done/items.length*100:0}%"></i></div></div>
  ${weekNotes(w,i).map(n=>`<div class="note">${n}</div>`).join("")}
  ${items.map((it,x)=>itemHTML(it,key(w,i,"x",x))).join("")}
  ${done===items.length&&items.length?`<div class="win">🔥 ${d.t==="rest"?"Week wrapped up. Ready for the next one.":"Day complete. Now eat your protein."}</div>`:""}
@@ -249,7 +265,7 @@ function eatView(){
  const w=S.week,i=S.day,m=meals(i);
  let p=0;m.forEach((x,j)=>{if(S.checks[key(w,i,"m",j)])p+=x.p});
  const hd=HABITS.filter((_,j)=>S.checks[key(w,i,"h",j)]).length;
- return `<div class="dayhead"><div class="lbl">${DAYS[i].f} · Week ${w}</div><div class="prot"><div class="big">${p}<span> / ~100 g protein</span></div><div class="lbl">${hd}/${HABITS.length} habits</div></div><div class="bar"><i style="width:${Math.min(100,p)}%"></i></div></div>
+ return `<div class="dayhead"><div class="lbl">${dayFull(w,i)} · Week ${w}</div><div class="prot"><div class="big">${p}<span> / ~100 g protein</span></div><div class="lbl">${hd}/${HABITS.length} habits</div></div><div class="bar"><i style="width:${Math.min(100,p)}%"></i></div></div>
  <div class="sec">Meals — tick when eaten</div>
  ${m.map((x,j)=>itemHTML({n:x.n,rx:"",how:""},key(w,i,"m",j),x)).join("")}
  <div class="sec">Daily habits</div>
@@ -287,7 +303,7 @@ function progView(){
  return `<div class="dayhead"><div class="lbl">Overall</div><h2>${overallPct()}% done</h2><div class="sub">Workouts ticked across all 12 weeks</div><div class="bar"><i style="width:${overallPct()}%"></i></div></div>
  <div class="sec">Change since your first entry</div>
  <div class="sumgrid" id="sum">${summaryHTML()}</div>
- <div class="sec">Weekly log · Sunday mornings</div>
+ <div class="sec">Weekly log · rest-day mornings (Wed)</div>
  <div class="tbl"><table><tr><th>Wk</th>${F.map(([,l])=>`<th>${l}</th>`).join("")}</tr>${rows}</table></div>
  <p style="font-size:12px;color:var(--mut);margin:8px 2px">★ = test weeks: log max push-ups, pull-ups and skipping. Other weeks: weight and waist are enough.</p>
  <div class="sec">Honest week-12 targets</div>
@@ -299,8 +315,8 @@ function progView(){
  <li><b>Mirror:</b> flatter lower belly, visible shoulder shape, wider-looking back. Clear abs usually need months 5–6.</li>
  </ul></div>
  <div class="sec">Saving & backup</div>
- <div class="card"><p>${storeMode()==="claude"?"✅ <b>Saving inside the Claude app.</b> Your ticks stay as long as you open this same page in Claude.":storeMode()==="phone"?"✅ <b>Saving on this phone's browser.</b> Don't clear Chrome's browsing data, and take a backup every Sunday.":"⚠️ <b>Not saving here.</b> Open the downloaded file in Chrome, or host it (see chat)."}</p>
- <p style="margin-top:8px">Tap <b>Backup</b> every Sunday. It downloads a small file. If anything gets wiped, tap <b>Restore</b> and pick that file.</p>
+ <div class="card"><p>${storeMode()==="claude"?"✅ <b>Saving inside the Claude app.</b> Your ticks stay as long as you open this same page in Claude.":storeMode()==="phone"?"✅ <b>Saving on this phone's browser.</b> Don't clear Chrome's browsing data, and take a backup every rest day (Wed).":"⚠️ <b>Not saving here.</b> Open the downloaded file in Chrome, or host it (see chat)."}</p>
+ <p style="margin-top:8px">Tap <b>Backup</b> every rest day (Wed). It downloads a small file. If anything gets wiped, tap <b>Restore</b> and pick that file.</p>
  <div style="display:flex;gap:8px;margin-top:10px"><button class="reset" style="margin:0;color:var(--acc);border-color:var(--acc)" data-a="backup">⬇ Backup</button><label class="reset" style="margin:0;text-align:center;display:block">⬆ Restore<input type="file" id="restore" accept=".json,application/json" style="display:none"></label></div></div>
  <button class="reset" data-a="reset2">Reset all ticks & logs</button>`;
 }
@@ -340,10 +356,10 @@ function render(){
  $("wkp").textContent=`Phase ${ph} · ${PH[ph].name}`;
  $("wkbar").style.width=weekPct(w)+"%";
  const sm=storeMode();
- $("pct").textContent=`${overallPct()}% · v3 · ${sm==="none"?"⚠️ not saving":"💾 saving"}`;
+ $("pct").textContent=`${overallPct()}% · v4 · ${sm==="none"?"⚠️ not saving":"💾 saving"}`;
  const chips=$("chips");
  chips.style.display=(S.tab==="train"||S.tab==="eat")?"flex":"none";
- chips.innerHTML=DAYS.map((d,i)=>`<button class="chip ${i===S.day?"on":""} ${S.tab==="train"&&dayDone(w,i)?"done":""}" data-a="day" data-v="${i}">${d.d}<small>${d.s}</small></button>`).join("");
+ chips.innerHTML=DAYS.map((d,i)=>{const dt=dateOf(w,i);return `<button class="chip ${i===S.day?"on":""} ${S.tab==="train"&&dayDone(w,i)?"done":""}" data-a="day" data-v="${i}">${WD[dt.getDay()]} ${dt.getDate()}<small>${d.s}</small></button>`}).join("");
  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===S.tab));
  $("main").innerHTML=S.tab==="train"?trainView():S.tab==="eat"?eatView():S.tab==="prog"?progView():guideView();
 }
@@ -388,6 +404,8 @@ async function load(){
  }else{
   const l=ls();if(l){try{const v=l.getItem(LSK);if(v){const d=JSON.parse(v);if(d.week)S.week=d.week;S.checks=d.checks||{};S.logs=d.logs||{}}}catch(e){}}
  }
+ /* always open on today's week and day */
+ const tp=todayPos();S.week=tp.w;S.day=tp.i;
  render();
 }
 
